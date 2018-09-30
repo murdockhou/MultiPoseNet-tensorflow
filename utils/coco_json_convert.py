@@ -79,7 +79,8 @@ for img in img_info:
             human_anno['human'+str(human_count)]    = bbox
             human_count += 1
     if human_count == 0:
-        continue
+        keypoint_anno['human0'] = [0 for i in range(17*3)]
+        human_anno['human0']    = [0 for i in range(4)]
     unit['image_id']             = img_name
     unit['keypoint_annotations'] = keypoint_anno
     unit['human_annotations']    = human_anno
@@ -94,7 +95,7 @@ for img in img_info:
     if count % 100 == 0:
         print ('Processing {}/{}'.format(count, ll))
 
-with open('/media/ulsee/E/pose_residual_net_tfrecord/cocotrain2017_convert_ai.json', 'w') as fw:
+with open('/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017.json', 'w') as fw:
     json.dump(units, fw)
     print ('Convert done.')
 

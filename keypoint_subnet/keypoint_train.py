@@ -19,21 +19,21 @@ from src.json_read import  load_json, load_coco_json
 from src.img_pre_processing import img_pre_processing
 
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_integer('batch_size', 1, 'train batch size number')
+tf.flags.DEFINE_integer('batch_size', 4, 'train batch size number')
 tf.flags.DEFINE_integer('img_size', 480, 'net input size')
 tf.flags.DEFINE_float('learning_rate', 1e-4, 'trian lr')
 tf.flags.DEFINE_float('decay_rate', 0.95, 'lr decay rate')
 tf.flags.DEFINE_integer('decay_steps', 10000, 'lr decay steps')
 tf.flags.DEFINE_integer('max_to_keep', 10, 'num of models to saved')
-tf.flags.DEFINE_integer('num_keypoints', 14, 'number of keypoints to detect')
-tf.flags.DEFINE_string('pretrained_resnet', 'pre_trained/20180601_resnet_v2_imagenet_checkpoint/model.ckpt-258931',
+tf.flags.DEFINE_integer('num_keypoints', 17, 'number of keypoints to detect')
+tf.flags.DEFINE_string('pretrained_resnet', 'pre_trained/resnet_v2_50.ckpt',
                        'resnet_v2_50 pretrained model')
 tf.flags.DEFINE_boolean('is_training', True, '')
 tf.flags.DEFINE_string('checkpoint_path', '/media/ulsee/D/keypoint_subnet', 'path to save training model')
-tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/E/keypoint_subnet_tfrecord/ai_train.tfrecord', '')
-tf.flags.DEFINE_string('json_file', '/media/ulsee/E/keypoint_subnet_tfrecord/ai_train.json',
+tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017.tfrecord', '')
+tf.flags.DEFINE_string('json_file', '/media/ulsee/E/keypoint_subnet_tfrecord/coco_train.json',
                        '')
-tf.flags.DEFINE_string('finetuning', 'model.ckpt-64999/model.ckpt-130184',
+tf.flags.DEFINE_string('finetuning', None,
                        'folder of saved model that you wish to continue training or testing(e.g. 20180828-1803/model.ckpt-xxx), default:None')
 tf.flags.DEFINE_boolean('change_dataset', False,
                         'if change dataset from ai_challenger to coco, the num_keypoints will be changed. If so, when we finetunnig, need to '
@@ -55,7 +55,7 @@ def keypoint_train():
         checkpoints_dir = os.path.join(FLAGS.checkpoint_path, FLAGS.finetuning)
     print('checkpoints_dir == {}'.format(checkpoints_dir))
     #-----------------------------load json--------------------------------------#
-    imgid_keypoints_dict = load_json(FLAGS.json_file)
+    imgid_keypoints_dict = load_coco_json(FLAGS.json_file)
     # ------------------------------define Graph --------------------------------#
     tf.reset_default_graph()
     graph = tf.Graph()
@@ -97,7 +97,7 @@ def keypoint_train():
 
         #---------------------------------control sigma for heatmap-------------------------------#
         start_gussian_sigma    = 10.0
-        end_gussian_sigma      = 4.5
+        end_gussian_sigma      = 3.5
         start_decay_sigma_step = 10000
         decay_steps            = 50000
         # gussian sigma will decay when global_step > start_decay_sigma_step
@@ -140,9 +140,10 @@ def keypoint_train():
 
             start_time = time.time()
             try:
-                while not coord.should_stop() and step < 300000:
+                while not coord.should_stop() and step < 200000:
                     imgs, imgs_id, imgs_height, imgs_width, g_sigma = sess.run([img_batch, img_id_batch, img_height_batch, img_width_batch, gussian_sigma])
-
+                    # print (type(imgs_id))
+                    # print (imgs_id)
                     gt_heatmaps = get_heatmap(label_dict=imgid_keypoints_dict, img_ids=imgs_id, img_heights=imgs_height,
                                               img_widths=imgs_width, img_resize=FLAGS.img_size, num_keypoints=FLAGS.num_keypoints,
                                               sigma=g_sigma)

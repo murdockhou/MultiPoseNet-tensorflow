@@ -120,9 +120,9 @@ class Keypoint_Subnet(object):
         tf.summary.scalar('net_loss', net_out_loss)
         tf.summary.image('ori_image', self.inputs, max_outputs=2)
         tf.summary.image('gt_head', tf.reshape(tf.transpose(
-            self.input_heats, [3, 0, 1, 2])[12],shape=[-1, self.img_size // 4, self.img_size // 4, 1]), max_outputs=2)
+            self.input_heats, [3, 0, 1, 2])[0],shape=[-1, self.img_size // 4, self.img_size // 4, 1]), max_outputs=2)
         tf.summary.image('pred_head', tf.reshape(tf.transpose(
-            pre_heat, [3, 0, 1, 2])[12], shape=[-1, self.img_size // 4, self.img_size // 4, 1]),max_outputs=2)
+            pre_heat, [3, 0, 1, 2])[0], shape=[-1, self.img_size // 4, self.img_size // 4, 1]),max_outputs=2)
 
         return total_loss, net_out_loss, pre_heat
 

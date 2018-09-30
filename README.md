@@ -20,5 +20,11 @@ read through tf_record file.
 
 - pose-residual: ai_train2017.tfrecord ; coco_train2017.tfrecord
 - person-detect: ai-instance-bbox.tfrecord ; coco-instance-bbox.tfrecord
-- keypoint:
+- keypoint: ai_train2017.tfrecord & ai_train2017.json ; coco_train2017.tfrecord & coco_train2017.json
+
+coco-keypoints-annotations:
+
+[0-16]::::::[nose, left_eye, right_eye, left_ear, right_ear, left_shoulder, right_shoulder, left_elbow,
+ right_elbow, left_wrist, right_wrist, left_hip, right_hip, left_knee, right_knee, left_ankle, right_ankle]
+
  
