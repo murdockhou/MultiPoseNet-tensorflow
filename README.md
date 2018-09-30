@@ -1,4 +1,4 @@
-##This repository contains a TensorFlow implementation about this ECCV 2018 paper:
+## This repository contains a TensorFlow implementation about this ECCV 2018 paper:
 
 [Muhammed Kocabas, Salih Karagoz, Emre Akbas. MultiPoseNet: Fast Multi-Person Pose Estimation using Pose Residual Network. In ECCV, 2018.](https://arxiv.org/abs/1807.04067)
 
@@ -16,7 +16,7 @@ Detailed information please see original [paper.](https://arxiv.org/abs/1807.040
 read through tf_record file.
 
 
-###dataset: 
+### dataset: 
 
 - pose-residual: ai_train2017.tfrecord ; coco_train2017.tfrecord
 - person-detect: ai-instance-bbox.tfrecord ; coco-instance-bbox.tfrecord
@@ -27,4 +27,7 @@ coco-keypoints-annotations:
 [0-16]::::::[nose, left_eye, right_eye, left_ear, right_ear, left_shoulder, right_shoulder, left_elbow,
  right_elbow, left_wrist, right_wrist, left_hip, right_hip, left_knee, right_knee, left_ankle, right_ankle]
 
+ # Thanks
  
+ [mkocabas](https://github.com/mkocabas/pose-residual-network)
+ [salihkaragoz](https://github.com/salihkaragoz/pose-residual-network-pytorch)
