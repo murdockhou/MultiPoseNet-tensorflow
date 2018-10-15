@@ -14,9 +14,9 @@ import tensorflow as tf
 from pose_residual_network.src.PRN import PRN
 
 
-def eval(json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoints_val2017.json'):
+def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoints_val2017.json'):
 
-    ckpt = '/media/ulsee/D/PRN/20180929-1839/model.ckpt-100000'
+    ckpt = checkpoint
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     graph = tf.Graph()
     with graph.as_default():
@@ -124,6 +124,7 @@ def eval(json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoi
                     indexes = np.argwhere(old_weights_bbox[:, :, :, 0, t] == 1)
                     keypoint = []
                     for i in indexes:
+
                         cr = crop(output_bbox[i[0], :, :, t], (i[1], i[2]), N=n_kernel)
                         score = np.sum(cr)
 

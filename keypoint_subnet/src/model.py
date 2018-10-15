@@ -22,13 +22,12 @@ from src.backbone import BackBone
 
 
 class Keypoint_Subnet(object):
-    def __init__(self, inputs, img_size, fpn, num_classes, batch_size, is_training=True):
+    def __init__(self, inputs, img_size, fpn, num_classes, batch_size):
         self.inputs          = inputs
         self.img_size        = img_size
         self.feature_pyramid = fpn
         self.num_classes     = num_classes
         self.batch_size      = batch_size
-        self.is_training     = is_training
         self.stddev          = 0.01
 
         self.input_heats     = tf.placeholder(tf.float32, [self.batch_size, self.img_size // 4, self.img_size // 4, self.num_classes])
@@ -116,13 +115,10 @@ class Keypoint_Subnet(object):
         total_loss = tf.reduce_sum(losses) / self.batch_size
         net_out_loss = tf.reduce_sum(loss_l2) / self.batch_size
         #-----------------------------------------add tf summary----------------------------------#
-        tf.summary.scalar('total_loss', total_loss)
-        tf.summary.scalar('net_loss', net_out_loss)
-        tf.summary.image('ori_image', self.inputs, max_outputs=2)
-        tf.summary.image('gt_head', tf.reshape(tf.transpose(
-            self.input_heats, [3, 0, 1, 2])[0],shape=[-1, self.img_size // 4, self.img_size // 4, 1]), max_outputs=2)
-        tf.summary.image('pred_head', tf.reshape(tf.transpose(
-            pre_heat, [3, 0, 1, 2])[0], shape=[-1, self.img_size // 4, self.img_size // 4, 1]),max_outputs=2)
+        # tf.summary.scalar('total_loss', total_loss)
+        # tf.summary.scalar('net_loss', net_out_loss)
+        # tf.summary.image('ori_image', self.inputs, max_outputs=2)
+
 
         return total_loss, net_out_loss, pre_heat
 

@@ -68,7 +68,7 @@ def convert_ai_challenger(labels, tfrecord_file):
     writer     = tf.python_io.TFRecordWriter(tfrecord_file)
     total_imgs = len(labels)
     deal_imgs  = 0
-
+    useless    = 0
     for label in labels:
         # print (label['image_id'])
 
@@ -79,6 +79,10 @@ def convert_ai_challenger(labels, tfrecord_file):
 
         for human in humans:
             kp  = kp_anno[human]
+            kpv = kp[2::3]
+            if np.sum(kpv>0) < 4:
+                useless += 1
+                continue
             box = human_anno[human]
             box[2] = box[2] - box[0]
             box[3] = box[3] - box[1]
@@ -111,6 +115,7 @@ def convert_ai_challenger(labels, tfrecord_file):
 
         if deal_imgs % 1000 == 0:
             print ('Processing {}/{}'.format(deal_imgs, total_imgs))
+            print ('Useless boxs {}'.format(useless))
 
     writer.close()
     print ('Converting tf record done.')

@@ -10,6 +10,9 @@
 import numpy as np
 import os, cv2, random
 import matplotlib.pyplot as plt
+
+import sys
+sys.path.append('../')
 from src.get_heatmap import get_single_heatmap
 
 
@@ -29,13 +32,13 @@ def img_pre_processing(imgs, heatmaps):
 
         rd = random.randint(1, 10)
         if rd < 4:
-            current_img, current_heatmap = image_rotation(current_img, current_heatmap, 45)
+            current_img, current_heatmap = image_rotation(current_img, current_heatmap, 40)
 
-        if rd > 7:
-            current_img, current_heatmap = image_rotation(current_img, current_heatmap, -45)
+        elif rd > 7:
+            current_img, current_heatmap = image_rotation(current_img, current_heatmap, -40)
 
         rd = random.randint(1, 10)
-        if rd < 6:
+        if rd < 4:
             current_img, current_heatmap = image_vertical_flipping(current_img, current_heatmap)
 
         imgs[i,:,:,:] = current_img
@@ -43,12 +46,12 @@ def img_pre_processing(imgs, heatmaps):
 
     return imgs, heatmaps
 
-def image_rotation(img, heatmap, degree):
+def image_rotation(img, heatmap, degree=40):
     img_ori_shape = img.shape  # [h, w, c]
     heat_ori_shape = heatmap.shape  # [ h, w, c]
 
     img = rotated_bound(img, degree)
-    img = cv2.resize(img, (img_ori_shape[0], img_ori_shape[1]))
+    img = cv2.resize(img, (img_ori_shape[1], img_ori_shape[0]))
 
     for c in range(heat_ori_shape[2]):
         cur_heatmap = heatmap[:, :, c]
@@ -56,7 +59,7 @@ def image_rotation(img, heatmap, degree):
         cur_heatmap = rotated_bound(cur_heatmap, degree)
         if len(cur_heatmap.shape) == 3:
             cur_heatmap = np.squeeze(cur_heatmap, axis=2)
-        heatmap[:, :, c] = cv2.resize(cur_heatmap, (heat_ori_shape[0], heat_ori_shape[1]))
+        heatmap[:, :, c] = cv2.resize(cur_heatmap, (heat_ori_shape[1], heat_ori_shape[0]))
     return img, heatmap
 
 def rotated_bound(image, angle):
@@ -84,6 +87,24 @@ def rotated_bound(image, angle):
     return cv2.warpAffine(image, M, (nW, nH))
 
 def image_vertical_flipping(img, heatmap):
+    '''
+    要注意的是，进行flip之后，heatmap各个channel的值要改变，因为flip之后，图片上原本左关节点会变成右关节点，
+    右关节点同样会变成左关节点，因此需要在对heatmap进行flip之后，交换左右两个通道。
+    coco数据集标注的顺序是：
+    [0------16]:
+    0:    nose
+    1-2:  left eye,      right eye
+    3-4:  left ear,      right ear
+    5-6:  left shoulder, right shoulder
+    7-8:  left elbow,  right elbow
+    9-10: left wrist , right wrist
+    11-12:left hip,    right hip
+    13-14:left knee,   right knee
+    15-16:left ankle,  right ankle
+    :param img:
+    :param heatmap:
+    :return:
+    '''
 
     img = cv2.flip(img, 0)
     for i in range(heatmap.shape[2]):
@@ -96,21 +117,76 @@ def image_vertical_flipping(img, heatmap):
 
         heatmap[:, :, i] = cur_heat
 
-    return img, heatmap
+    # exchane left & right joints
+    new_heatmap = np.zeros(heatmap.shape, dtype=heatmap.dtype)
+    for i in range(1, 16, 2):
+        new_heatmap[:, :, i+1]   = heatmap[:, :, i]
+        new_heatmap[:, :, i] = heatmap[:, :, i+1]
+    new_heatmap[:, :, 0] = heatmap[:, :, 0]
+    return img, new_heatmap
 
 def _test():
-    img = cv2.imread('test.jpg', cv2.COLOR_BGR2RGB)
-    kp = [174,63,1,253,154,1,350,183,1,411,354,1,0,0,3,0,0,3,0,0,3,0,0,3,0,0,3,0,0,3]
-    heatmap = get_single_heatmap(kp, img.shape[0], img.shape[1], 10, 4)
-    img = cv2.resize(img, (224, 224))
-    heatmap = cv2.resize(heatmap, (56, 56))
+    img = cv2.imread('/media/ulsee/E/datasets/coco/cocoval2017/000000281929.jpg', cv2.COLOR_BGR2RGB)
+    img_copy = img.copy()
+    # cv2.imwrite('gt_img.jpg', img)
+    # img = cv2.flip(img, 0)
+    kp = [339,93,2,346,88,2,328,88,2,360,89,2,318,90,1,385,135,2,301,147,2,416,184,2,
+          286,204,2,407,226,2,276,244,2,358,254,2,309,259,2,352,346,2,307,349,2,348,448,2,312,449,2]
+    heatmap = get_single_heatmap(kp, img.shape[0], img.shape[1], channels=17, sigma=4)
 
-    # img, heatmap = image_rotation(img, heatmap)
-    # cv2.imwrite('gt_flip.jpg', img)
+    img, heatmap = image_rotation(img, heatmap, 40)
+    img, heatmap = image_vertical_flipping(img, heatmap)
+    cv2.imwrite('img_rotate_flip.jpg', img)
+    #---------#
+    for c in range(17):
+        ch = heatmap[:, :, c]
+        # print (ch)
+        curmax = np.max(ch)
+        index = np.where(ch == curmax)
+        coorx = index[0][0]
+        coory = index[1][0]
+        cv2.circle(img, (coory, coorx), 5, (0, 0, 255), -1)
+        cv2.putText(img, str(c), (coory, coorx), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 1)
+    cv2.imwrite('img_rotate_flip_with_heat.jpg', img)
     heatmap = np.sum(heatmap, axis=2, keepdims=True) * 255
-    # heatmap = cv2.resize(heatmap, (224, 224))
-    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_GRAY2RGB)
-    cv2.imwrite('heat_.jpg', heatmap)
+    cv2.imwrite('heat_rotate_flip.jpg', heatmap)
+
+    # heatmap_ori = heatmap
+    # heatmap_ori = np.sum(heatmap_ori, axis=2, keepdims=True)*255
+    # cv2.imwrite('gt_heat.jpg', heatmap_ori)
+    # # ---------#
+    # for c in range(17):
+    #     ch = heatmap[:, :, c]
+    #     # print (ch)
+    #     curmax = np.max(ch)
+    #     index = np.where(ch == curmax)
+    #     coorx = index[0][0]
+    #     coory = index[1][0]
+    #     cv2.circle(img_copy, (coory, coorx), 5, (0, 0, 255), -1)
+    #     cv2.putText(img_copy, str(c), (coory, coorx), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 1)
+    # cv2.imwrite('img_with_heat.jpg', img_copy)
+    # #-----------#
+    # img, heatmap = image_vertical_flipping(img, heatmap)
+    # # img, heatmap = image_rotation(img, heatmap)
+    #
+    # cv2.imwrite('img_flip.jpg', img)
+    #
+    # #---------#
+    # for c in range(17):
+    #     ch = heatmap[:, :, c]
+    #     # print (ch)
+    #     curmax = np.max(ch)
+    #     index = np.where(ch == curmax)
+    #     coorx = index[0][0]
+    #     coory = index[1][0]
+    #     cv2.circle(img, (coory, coorx), 5, (0, 0, 255), -1)
+    #     cv2.putText(img, str(c), (coory, coorx), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 1)
+    # cv2.imwrite('img_flip_with_heat.jpg', img)
+    # #---------#
+    # heatmap = np.sum(heatmap, axis=2, keepdims=True) * 255
+    #
+    # heatmap = cv2.cvtColor(heatmap, cv2.COLOR_GRAY2RGB)
+    # cv2.imwrite('heat_flip.jpg', heatmap)
 
 
 

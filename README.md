@@ -1,3 +1,5 @@
+next: 考虑使用softargmax对heatmap进行求和得到关键点，单人的比较直观，每个heatmap直接生成一个关节点即可。多人的需要考虑下，是事先固定好关节点个数，或者其它方式
+
 ## This repository contains a TensorFlow implementation about this ECCV 2018 paper:
 
 [Muhammed Kocabas, Salih Karagoz, Emre Akbas. MultiPoseNet: Fast Multi-Person Pose Estimation using Pose Residual Network. In ECCV, 2018.](https://arxiv.org/abs/1807.04067)
@@ -31,3 +33,5 @@ coco-keypoints-annotations:
  
  [mkocabas](https://github.com/mkocabas/pose-residual-network)
  [salihkaragoz](https://github.com/salihkaragoz/pose-residual-network-pytorch)
+ 
+ 

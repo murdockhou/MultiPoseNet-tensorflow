@@ -13,13 +13,13 @@ import tensorflow as tf
 
 FLAGS = tf.flags.FLAGS
 
-tf.flags.DEFINE_string(name='image_dir', default='/media/ulsee/E/datasets/coco/cocotrain2017',
+tf.flags.DEFINE_string(name='image_dir', default='/media/ulsee/E/datasets/test2',
                        help='image directory for building tfrecord')
 
-tf.flags.DEFINE_string(name='tfrecord_file', default='/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017.tfrecord',
+tf.flags.DEFINE_string(name='tfrecord_file', default='/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017-test.tfrecord',
                        help='output path you want to save tfrecord data file')
 
-tf.flags.DEFINE_integer(name='img_num', default=0,
+tf.flags.DEFINE_integer(name='img_num', default=21,
                         help='define how many images to build tfrecord data, zero menas all')
 
 
@@ -80,9 +80,9 @@ def tfrecord_writer(img_dir, output_file):
     :param output_file: tfrecord name with path to save
     :return:
     '''
-    print (1)
+    # print (1)
     img_paths, img_ids, img_heights, img_widths = img_reader(image_dir=img_dir)
-    print (2)
+    # print (2)
     output_dir = os.path.dirname(output_file)
     try:
         os.makedirs(output_dir)

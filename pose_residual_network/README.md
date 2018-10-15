@@ -12,3 +12,50 @@ PRN网络是对单独的一个一个box进行训练的，而不是一张图片�
 
 
 label和input生成之后，均进行高斯处理(sigma小于1显示比较明显)，最后得到的结果才是PRN网络的输入和label。
+
+### 训练结果：
+
+- 和官方提供的pytorch版本一致，训练参数一致，训练次数一致，在coco val2017的结果如下：
+
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets= 20 ] = 0.886
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets= 20 ] = 0.977
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets= 20 ] = 0.920
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets= 20 ] = 0.874
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets= 20 ] = 0.912
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 20 ] = 0.911
+ Average Recall     (AR) @[ IoU=0.50      | area=   all | maxDets= 20 ] = 0.980
+ Average Recall     (AR) @[ IoU=0.75      | area=   all | maxDets= 20 ] = 0.933
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets= 20 ] = 0.893
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets= 20 ] = 0.943
+
+```
+ 使用官方提供的pytorch版本训练，使用提供的参数和数据，在coco val2017的结果如下：
+ 
+ ```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets= 20 ] = 0.888
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets= 20 ] = 0.977
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets= 20 ] = 0.920
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets= 20 ] = 0.876
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets= 20 ] = 0.910
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 20 ] = 0.913
+ Average Recall     (AR) @[ IoU=0.50      | area=   all | maxDets= 20 ] = 0.981
+ Average Recall     (AR) @[ IoU=0.75      | area=   all | maxDets= 20 ] = 0.933
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets= 20 ] = 0.894
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets= 20 ] = 0.943
+
+```
+   官方宣称能达到的精度如下：
+ ```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets= 20 ] = 0.892
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets= 20 ] = 0.978
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets= 20 ] = 0.921
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets= 20 ] = 0.883
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets= 20 ] = 0.912
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 20 ] = 0.917
+ Average Recall     (AR) @[ IoU=0.50      | area=   all | maxDets= 20 ] = 0.982
+ Average Recall     (AR) @[ IoU=0.75      | area=   all | maxDets= 20 ] = 0.937
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets= 20 ] = 0.902
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets= 20 ] = 0.944
+
+```

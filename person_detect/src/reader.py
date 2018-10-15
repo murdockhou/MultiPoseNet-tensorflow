@@ -11,14 +11,15 @@ import tensorflow as tf
 from src.retinanet import RetinaNet
 
 class Box_Reader(object):
-    def __init__(self, tfrecord_file, img_size=224, batch_size=1):
+    def __init__(self, tfrecord_file, img_size=224, batch_size=1, epochs=1):
         self.img_size      = img_size
         self.batch_size    = batch_size
+        self.epochs        = epochs
         self.tfrecord_file = tfrecord_file
         self.reader        = tf.TFRecordReader()
 
     def feed(self):
-        filename_queue = tf.train.string_input_producer([self.tfrecord_file])
+        filename_queue = tf.train.string_input_producer([self.tfrecord_file], num_epochs=self.epochs)
         reader = tf.TFRecordReader()
         _, serialized_example = reader.read(filename_queue)
 
@@ -79,3 +80,28 @@ class Box_Reader(object):
                           tf.reshape(bbox[:, 3] * factorx, (-1, 1))],
                          axis=1)
         return img, bbox
+
+def reader_test():
+    batch = 1
+    epochs = 1
+    reader = Box_Reader(tfrecord_file='', batch_size=batch, epochs=epochs)
+    imgs, hs, ws, boxs, labels = reader.feed()
+    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    with tf.Session() as sess:
+        sess.run(init_op)
+        step = 0
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+
+        try :
+            while not coord.should_stop():
+                a, b, c, d, e = sess.run([imgs, hs, ws, labels])
+                step +=1
+        except tf.errors.OutOfRangeError:
+            print ('batch = {}, epochs = {}, steps = {}'.format(batch, epochs, step))
+        finally:
+            coord.request_stop()
+            coord.join(threads)
+
+if __name__ == '__main__':
+    reader_test()

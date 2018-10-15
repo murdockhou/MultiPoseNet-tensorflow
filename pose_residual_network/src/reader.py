@@ -10,6 +10,7 @@
 import tensorflow as tf
 import numpy as np
 import cv2
+import os
 
 class PRN_READER(object):
     def __init__(self, batch_size, height, width, channels, tfrecord_file):
@@ -22,7 +23,7 @@ class PRN_READER(object):
 
     def feed(self):
 
-        filename_queue = tf.train.string_input_producer([self.tfrecord_file])
+        filename_queue = tf.train.string_input_producer([self.tfrecord_file], num_epochs=16)
         reader         = self.reader
         _, serialized_example = reader.read(filename_queue)
 
@@ -43,7 +44,7 @@ class PRN_READER(object):
         batch_input, batch_label = tf.train.shuffle_batch(
             [inputs, label],
             batch_size=self.batch_size,
-            num_threads=12,
+            num_threads=4,
             capacity=1000,
             min_after_dequeue=100
         )
@@ -52,32 +53,30 @@ class PRN_READER(object):
 
 
 def reader_test():
-    reader = PRN_READER(batch_size=2, height=56, width=36, channels=14,
-                        tfrecord_file='/media/ulsee/E/pose_residual_net_tfrecord/ai_test.tfrecord')
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    reader = PRN_READER(batch_size=1, height=56, width=36, channels=17,
+                        tfrecord_file='/raid5/hswData/pose_residual_net_tfrecord/coco_train2017_6.tfrecord')
     net_x, label = reader.feed()
     # net_x = tf.reduce_sum(net_x, axis=3, keepdims=True)
     # label = tf.reduce_sum(label, axis=3, keepdims=True)
 
     with tf.Session() as sess:
+        sess.run([tf.global_variables_initializer(), tf.local_variables_initializer()])
         coord   = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
 
-        sess.run(tf.global_variables_initializer())
-        sess.run(tf.local_variables_initializer())
+        step = 0
+        try:
+            while not coord.should_stop():
+                _1, _2 = sess.run([net_x, label])
+                step += 1
+        except tf.errors.OutOfRangeError:
+            print('done. total step == ', step)
+        finally:
 
-        img1, img2 = sess.run([net_x, label])
-        img1 = np.sum(img1, axis=3, keepdims=True)
-        img2 = np.sum(img2, axis=3, keepdims=True)
-        # img1 = img1[:,:,4]
-        # img2 = img2[:,:,4]
-        cv2.imwrite('/media/ulsee/E/pose_residual_net_tfrecord/input2.jpg', img1[1]*255)
-        cv2.imwrite('/media/ulsee/E/pose_residual_net_tfrecord/label2.jpg', img2[1]*255)
-
-        print (sess.run(net_x).shape)
-        print (sess.run(label).shape)
-
-        coord.request_stop()
-        coord.join(threads)
+            print ('batch = 1, epochs = 1,  total step == ', step)
+            coord.request_stop()
+            coord.join(threads)
 
 
 if __name__ == '__main__':
