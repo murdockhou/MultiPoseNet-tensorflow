@@ -1,4 +1,8 @@
-next: 考虑使用softargmax对heatmap进行求和得到关键点，单人的比较直观，每个heatmap直接生成一个关节点即可。多人的需要考虑下，是事先固定好关节点个数，或者其它方式
+### NOTE:
+
+I find somewhere is weird in eval.py in the official [PRN-pytorch impementaion repo](https://github.com/salihkaragoz/pose-residual-network-pytorch). When to get predicated bbox_keypoints, the code used the true keypoints to assign the bbox_keypoints. The code in eval.py is about line 200 and line 205. The peaks is true keypoints coordinate, it seems that used the true coordinate to assign the predicated bbox_keypoints. Actually i think the line 209~220 in eval.py is the right way to get real predicated bbox_keypoints.
+
+As far as i can see, i think that this ropo has some problems and cann't get the correct result through 'correct way'. But the author did not response to me and maybe there are still some tricks in this repo that i didn't found yet.
 
 ## This repository contains a TensorFlow implementation about this ECCV 2018 paper:
 

@@ -42,7 +42,7 @@ try to convert coco annotation json file into as like ai_challenger format
 import json
 import numpy as np
 
-coco_json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoints_train2017.json'
+coco_json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoints_val2017.json'
 
 f      = open(coco_json_file, encoding='utf-8')
 labels = json.load(f)
@@ -84,6 +84,7 @@ for img in img_info:
     unit['image_id']             = img_name
     unit['keypoint_annotations'] = keypoint_anno
     unit['human_annotations']    = human_anno
+    unit['id']                   = img_id
 
     units.append(unit)
 
@@ -95,7 +96,7 @@ for img in img_info:
     if count % 100 == 0:
         print ('Processing {}/{}'.format(count, ll))
 
-with open('/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017.json', 'w') as fw:
+with open('/media/ulsee/E//coco_val2017_aiformat.json', 'w') as fw:
     json.dump(units, fw)
     print ('Convert done.')
 

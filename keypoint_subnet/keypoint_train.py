@@ -25,11 +25,11 @@ from src.img_pre_processing import img_pre_processing
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_integer('train_nums', 118280, 'train data nums, default: cocotrain2017--118280')
-tf.flags.DEFINE_integer('epochs', 10, 'train epochs')
+tf.flags.DEFINE_integer('epochs', 8, 'train epochs')
 tf.flags.DEFINE_integer('batch_size', 4, 'train batch size number')
 tf.flags.DEFINE_integer('img_size', 480, 'net input size')
 tf.flags.DEFINE_float('learning_rate', 1e-4, 'trian lr')
-tf.flags.DEFINE_float('decay_rate', 0.95, 'lr decay rate')
+tf.flags.DEFINE_float('decay_rate', 0.9, 'lr decay rate')
 tf.flags.DEFINE_integer('decay_steps', 10000, 'lr decay steps')
 tf.flags.DEFINE_integer('max_to_keep', 10, 'num of models to saved')
 tf.flags.DEFINE_integer('num_keypoints', 17, 'number of keypoints to detect')
@@ -40,7 +40,7 @@ tf.flags.DEFINE_string('checkpoint_path', '/media/ulsee/D/keypoint_subnet', 'pat
 tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017.tfrecord', '')
 tf.flags.DEFINE_string('json_file', '/media/ulsee/E/keypoint_subnet_tfrecord/coco_train2017.json',
                        '')
-tf.flags.DEFINE_string('finetuning', None,
+tf.flags.DEFINE_string('finetuning', '20181023-2043/model_alter.ckpt-239999',
                        'folder of saved model that you wish to continue training or testing(e.g. 20180828-1803/model.ckpt-xxx), default:None')
 tf.flags.DEFINE_boolean('change_dataset', False,
                         'if change dataset from ai_challenger to coco, the num_keypoints will be changed. If so, when we finetunnig, need to '
@@ -80,7 +80,8 @@ def keypoint_train():
         #-----------------------------learning rate------------------------------#
         global_step   = tf.Variable(0)
         learning_rate = tf.train.exponential_decay(FLAGS.learning_rate, global_step=global_step,
-                                                   decay_steps=FLAGS.decay_steps, decay_rate=FLAGS.decay_rate,
+                                                   decay_steps=int(FLAGS.train_nums / FLAGS.batch_size),
+                                                   decay_rate=FLAGS.decay_rate,
                                                    staircase=True)
         opt               = tf.train.AdamOptimizer(learning_rate, epsilon=1e-5)
         # grads             = opt.compute_gradients(total_loss)
@@ -144,13 +145,13 @@ def keypoint_train():
         tf.summary.text('img_ids', img_id_batch_placeholder)
         tf.summary.scalar('total_loss', total_loss)
         tf.summary.scalar('net_loss', net_loss)
-        tf.summary.image('gt_right_shoulder', tf.reshape(tf.transpose(
-            keypoint_net.input_heats, [3, 0, 1, 2])[6], shape=[-1, FLAGS.img_size // 4, FLAGS.img_size // 4, 1]), max_outputs=2)
+        tf.summary.image('gt_right_ankle', tf.reshape(tf.transpose(
+            keypoint_net.input_heats, [3, 0, 1, 2])[16], shape=[-1, FLAGS.img_size // 4, FLAGS.img_size // 4, 1]), max_outputs=2)
         tf.summary.image('ori_image', backbone.input_imgs, max_outputs=2)
         # tf.summary.image('gt_left_shoulder', tf.reshape(tf.transpose(
         #     keypoint_net.input_heats, [3, 0, 1, 2])[5], shape=[-1, FLAGS.img_size // 4, FLAGS.img_size // 4, 1]),max_outputs=2)
-        tf.summary.image('pred_right_shoulder', tf.reshape(tf.transpose(
-            pre_heat, [3, 0, 1, 2])[6], shape=[-1, FLAGS.img_size // 4, FLAGS.img_size // 4, 1]), max_outputs=2)
+        tf.summary.image('pred_right_ankle', tf.reshape(tf.transpose(
+            pre_heat, [3, 0, 1, 2])[16], shape=[-1, FLAGS.img_size // 4, FLAGS.img_size // 4, 1]), max_outputs=2)
         tf.summary.image('gt_heatmap', tf.reduce_sum(keypoint_net.input_heats, axis=3, keepdims=True), max_outputs=2)
         tf.summary.image('pred_heatmap', tf.reduce_sum(pre_heat, axis=3, keepdims=True), max_outputs=2)
         tf.summary.scalar('lr', learning_rate)
@@ -168,7 +169,7 @@ def keypoint_train():
                 print ('Successfully load pre_trained keypoint_subnet model.')
                 # step = int(checkpoints_dir.split('/')[-1].split('.')[-1].split('-')[-1])
                 print ('Global_step == {}, Step == {}'.format(sess.run(global_step), step))
-                # step = sess.run(global_step)
+                step = sess.run(global_step)
                 # -- bn layer: resnet_v2_50/block1/unit_1/bottleneck_v2/conv1/BatchNorm/ ---#
                 # gamma = graph.get_tensor_by_name(name='resnet_v2_50/block4/unit_3/bottleneck_v2/conv2/BatchNorm/gamma:0')
                 # beta = graph.get_tensor_by_name(name='resnet_v2_50/block4/unit_3/bottleneck_v2/conv2/BatchNorm/beta:0')
@@ -194,7 +195,7 @@ def keypoint_train():
                                               img_widths=imgs_width, img_resize=FLAGS.img_size, num_keypoints=FLAGS.num_keypoints,
                                               sigma=g_sigma)
 
-                    imgs, gt_heatmaps = img_pre_processing(imgs, gt_heatmaps)
+                    # imgs, gt_heatmaps = img_pre_processing(imgs, gt_heatmaps)
 
                     _, loss_all, net_out_loss, pre_heats, lr, merge_op = sess.run(
                         [train_op, total_loss, net_loss, pre_heat, learning_rate, summary_op],
@@ -202,9 +203,9 @@ def keypoint_train():
                                    keypoint_net.input_heats:gt_heatmaps,
                                    img_id_batch_placeholder:imgs_id}
                     )
-
-                    summary_writer.add_summary(merge_op, step)
-                    summary_writer.flush()
+                    if step % 100 == 0:
+                        summary_writer.add_summary(merge_op, step)
+                        summary_writer.flush()
 
                     if (step + 1) % 10 == 0:
                         cur_time = time.time()

@@ -106,12 +106,12 @@ def image_vertical_flipping(img, heatmap):
     :return:
     '''
 
-    img = cv2.flip(img, 0)
+    img = cv2.flip(img, 1)
     for i in range(heatmap.shape[2]):
         cur_heat = heatmap[:, :, i]
 
         cur_heat = np.expand_dims(cur_heat, axis=2)
-        cur_heat = cv2.flip(cur_heat, 0)
+        cur_heat = cv2.flip(cur_heat, 1)
         if len(cur_heat.shape) == 3:
             cur_heat = np.squeeze(cur_heat, axis=2)
 
@@ -128,15 +128,15 @@ def image_vertical_flipping(img, heatmap):
 def _test():
     img = cv2.imread('/media/ulsee/E/datasets/coco/cocoval2017/000000281929.jpg', cv2.COLOR_BGR2RGB)
     img_copy = img.copy()
-    # cv2.imwrite('gt_img.jpg', img)
+    cv2.imwrite('gt_img.jpg', img)
     # img = cv2.flip(img, 0)
     kp = [339,93,2,346,88,2,328,88,2,360,89,2,318,90,1,385,135,2,301,147,2,416,184,2,
           286,204,2,407,226,2,276,244,2,358,254,2,309,259,2,352,346,2,307,349,2,348,448,2,312,449,2]
     heatmap = get_single_heatmap(kp, img.shape[0], img.shape[1], channels=17, sigma=4)
 
-    img, heatmap = image_rotation(img, heatmap, 40)
+    # img, heatmap = image_rotation(img, heatmap, 40)
     img, heatmap = image_vertical_flipping(img, heatmap)
-    cv2.imwrite('img_rotate_flip.jpg', img)
+    cv2.imwrite('img_flip.jpg', img)
     #---------#
     for c in range(17):
         ch = heatmap[:, :, c]
@@ -147,9 +147,9 @@ def _test():
         coory = index[1][0]
         cv2.circle(img, (coory, coorx), 5, (0, 0, 255), -1)
         cv2.putText(img, str(c), (coory, coorx), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 1)
-    cv2.imwrite('img_rotate_flip_with_heat.jpg', img)
+    cv2.imwrite('img_flip_with_heat.jpg', img)
     heatmap = np.sum(heatmap, axis=2, keepdims=True) * 255
-    cv2.imwrite('heat_rotate_flip.jpg', heatmap)
+    cv2.imwrite('heat__flip.jpg', heatmap)
 
     # heatmap_ori = heatmap
     # heatmap_ori = np.sum(heatmap_ori, axis=2, keepdims=True)*255

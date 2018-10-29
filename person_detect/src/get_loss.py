@@ -92,9 +92,9 @@ def get_inputs(img_size, batch_size, gt_boxes, gt_labels, is_training=True):
 
         current_loc_gt = loc_gt[i] #[#gt_anchors_number, 4]
         current_cls_gt = cls_gt[i] #[#gt_anchors_number]
-        print('Before remove zeros boxs, loc_gt shape = {}, cls_gt shape = {}'.format(current_loc_gt.get_shape(), current_cls_gt.get_shape()))
+        # print('Before remove zeros boxs, loc_gt shape = {}, cls_gt shape = {}'.format(current_loc_gt.get_shape(), current_cls_gt.get_shape()))
         current_loc_gt, current_cls_gt = deal_zeros_box(current_loc_gt, current_cls_gt)
-        print('After remove zeros boxs, loc_gt shape = {}, cls_gt shape = {}'.format(current_loc_gt.get_shape(), current_cls_gt.get_shape()))
+        # print('After remove zeros boxs, loc_gt shape = {}, cls_gt shape = {}'.format(current_loc_gt.get_shape(), current_cls_gt.get_shape()))
 
 
         anchor = anchor_assign(anchor, gt_boxes=BoxList(current_loc_gt), gt_labels=current_cls_gt, is_training=is_training)

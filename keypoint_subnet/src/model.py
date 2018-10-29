@@ -18,7 +18,7 @@ from tensorflow.contrib.slim import nets
 from tensorflow.contrib.layers.python.layers import utils
 import tensorflow.contrib.slim as slim
 
-from src.backbone import BackBone
+# from src.backbone import BackBone
 
 
 class Keypoint_Subnet(object):
@@ -122,25 +122,25 @@ class Keypoint_Subnet(object):
 
         return total_loss, net_out_loss, pre_heat
 
-if __name__ == '__main__':
-    graph = tf.Graph()
-    with graph.as_default():
-        batch_size = 1
-        height, width = 224, 224
-        inputs = tf.random_uniform((batch_size, height, width, 3), seed=1)
-
-        backbone = BackBone(img_size = 224, batch_size=1)
-        fpn, _ = backbone.build_fpn_feature()
-        kp = Keypoint_Subnet(backbone.input_imgs, img_size=backbone.img_size, fpn=fpn, batch_size=backbone.batch_size, num_classes=14)
-        total_loss, net_loss, pre_heat = kp.net_loss()
-        init = tf.group(
-            tf.global_variables_initializer(),
-            tf.local_variables_initializer())
-
-        saver = tf.train.Saver()
-
-        with tf.Session() as sess:
-            sess.run(init)
-
-            writer = tf.summary.FileWriter('graph', tf.get_default_graph())
-            writer.close()
+# if __name__ == '__main__':
+#     graph = tf.Graph()
+#     with graph.as_default():
+#         batch_size = 1
+#         height, width = 224, 224
+#         inputs = tf.random_uniform((batch_size, height, width, 3), seed=1)
+#
+#         backbone = BackBone(img_size = 224, batch_size=1)
+#         fpn, _ = backbone.build_fpn_feature()
+#         kp = Keypoint_Subnet(backbone.input_imgs, img_size=backbone.img_size, fpn=fpn, batch_size=backbone.batch_size, num_classes=14)
+#         total_loss, net_loss, pre_heat = kp.net_loss()
+#         init = tf.group(
+#             tf.global_variables_initializer(),
+#             tf.local_variables_initializer())
+#
+#         saver = tf.train.Saver()
+#
+#         with tf.Session() as sess:
+#             sess.run(init)
+#
+#             writer = tf.summary.FileWriter('graph', tf.get_default_graph())
+#             writer.close()

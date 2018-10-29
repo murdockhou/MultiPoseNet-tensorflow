@@ -1,6 +1,7 @@
 import os
 import math
 import json
+import cv2
 import argparse
 import numpy as np
 from tqdm import tqdm
@@ -12,9 +13,10 @@ from utils.gaussian import gaussian, crop, gaussian_multi_input_mp
 
 import tensorflow as tf
 from pose_residual_network.src.PRN import PRN
+from keypoint_subnet.src.get_heatmap import get_single_heatmap
 
 
-def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoints_val2017.json'):
+def eval(checkpoint = '/media/ulsee/D/PRN/20181015-0750/model.ckpt-245572', json_file = '/media/ulsee/E/datasets/coco/annotations2017/person_keypoints_val2017.json'):
 
     ckpt = checkpoint
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -107,16 +109,44 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
                     # weights_bbox[j, :, :, 0, :]      = gaussian_multi_input_mp(weights_bbox[j, :, :, 0, :])
 
                 # -------------------get output of prn net--------------------#
+
                 output_bbox = []
                 for j in range(weights_bbox.shape[0]):
                     inp = weights_bbox[j, :, :, 0, :]  # [h, w, 17]
                     output = sess.run(prn_out, feed_dict={inputs:[inp]})
+
                     temp = np.reshape(output, (56, 36, 17))
+                    kps = get_box_keypoints(temp)
+                    # print ('output_kps == {} '.format(kps))
                     output_bbox.append(temp)
 
                 # output_box: [len(bboxes), 56, 36, 17]
                 output_bbox = np.array(output_bbox)
-
+                ##############################################################################################################
+                # _img = cv2.imread('/media/ulsee/E/datasets/coco/cocoval2017/000000281929.jpg', cv2.COLOR_BGR2RGB)
+                # kp = [339, 93, 2, 346, 88, 2, 328, 88, 2, 360, 89, 2, 318, 90, 1, 385, 135, 2, 301, 147, 2, 416, 184, 2,
+                #       286, 204, 2, 407, 226, 2, 276, 244, 2, 358, 254, 2, 309, 259, 2, 352, 346, 2, 307, 349, 2, 348,
+                #       448, 2, 312, 449, 2]
+                # print (_img.shape)
+                # heatmap = get_single_heatmap(kp, _img.shape[0], _img.shape[1], channels=17, sigma=4)
+                # _prn_input = []
+                # for i in range(17):
+                #     _prn_input.append(cv2.resize(heatmap[:,:,i], (36, 56)))
+                #     # print (cv2.resize(heatmap[:,:,i], (36, 56)).shape)
+                # _prn_input = np.reshape(np.asarray(_prn_input), (56, 36, 17))
+                # _prn_output = sess.run(prn_out, feed_dict={inputs:[_prn_input]})
+                # _prn_output_ = []
+                # for i in range(17):
+                #     _prn_output_.append(cv2.resize(_prn_output[0, :, :, i], (_img.shape[1], _img.shape[0])))
+                # _prn_output = np.reshape(np.asarray(_prn_output_), (17, _img.shape[0], _img.shape[1]))
+                # _prn_output = np.transpose(_prn_output, (1,2,0))
+                # print (_prn_output.shape)
+                # cv2.imwrite('true_channel0.jpg', np.expand_dims(heatmap[:,:,0]*255, axis=2))
+                # cv2.imwrite('true_heatmap.jpg', np.sum(heatmap, axis=2, keepdims=True) * 255)
+                # cv2.imwrite('prn_channel0.jpg', np.expand_dims(_prn_output[:,:,0]*255, axis=2))
+                # cv2.imwrite('prn_heatmap.jpg', np.sum(_prn_output, axis=2, keepdims=True)*255)
+                # return
+                ##############################################################################################################
 
                 keypoints_score = []
 
@@ -132,7 +162,7 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
                         kp_score = old_weights_bbox[i[0], i[1], i[2], 1, t]
                         p_score = old_weights_bbox[i[0], i[1], i[2], 3, t]  ## ??
                         bbox_id = i[0]
-
+                        # print ('score == {}, kp_score == {}'.format(score, kp_score))
                         score = kp_score * score
 
                         s = [kp_id, bbox_id, kp_score, score]
@@ -176,8 +206,7 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
                                         else:
                                             row2 = np.argsort(table[column[0], :, 3])
                                             if row2[0] == r:
-                                                bbox_keypoints[bbox, i, :] = \
-                                                [x[:3] for x in peaks[i] if x[3] == table[bbox, r, 0]][0]
+                                                bbox_keypoints[bbox, i, :] = [x[:3] for x in peaks[i] if x[3] == table[bbox, r, 0]][0]
                                                 break
                     else:
                         for j in range(weights_bbox.shape[0]):
@@ -193,7 +222,7 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
                                                                max_index[0][0] / y_scale + b[1], 0]
 
                 my_keypoints = []
-
+                # print ('bbox_keypoints === {}'.format(bbox_keypoints))
                 for i in range(bbox_keypoints.shape[0]):
                     k = np.zeros(51)
                     k[0::3] = bbox_keypoints[i, :, 0]
@@ -206,6 +235,7 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
                         if bbox_keypoints[i, f, 0] != 0 and bbox_keypoints[i, f, 1] != 0:
                             count += 1
                         pose_score += bbox_keypoints[i, f, 2]
+                        # print (pose_score)
                     pose_score /= 17.0
 
                     my_keypoints.append(k)
@@ -218,9 +248,10 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
                         'keypoints': k.tolist()
                     }
                     my_results.append(image_data)
-
-
-        ann_filename = 'val2017_PRN_keypoint_results_prn.json'
+                # print ('###############################################################')
+                # if len(my_results) > 10:
+                #     break
+        ann_filename = 'val2017_PRN_keypoint_results_prn_.json'
         # write output
         json.dump(my_results, open(ann_filename, 'w'), indent=4)
 
@@ -235,6 +266,28 @@ def eval(checkpoint = '', json_file = '/media/ulsee/E/datasets/coco/annotations2
         coco_eval.summarize()
 
     # os.remove(ann_filename)
+def get_box_keypoints(prn_out):
+    '''
+
+    :param prn_out: a heatmap, typically the prn net work output
+    :return:
+        keypoints: a list of list, contains one pair coordinate for each channel, e.g.,[ [x1, y1], [x2, y2],...,[x17, y17]]
+    '''
+    keypoints = []
+    for c in range(17):
+        current_channel = prn_out[:, :, c]
+        cur_max = np.max(current_channel)
+        if cur_max == 0:
+            coorx = 0
+            coory = 0
+        else:
+            index_all = np.where(current_channel == cur_max)
+            coorx = index_all[0][0]
+            coory = index_all[1][0]
+
+        keypoints.append([coory, coorx])
+
+    return keypoints
 
 def prepare(json_file):
 

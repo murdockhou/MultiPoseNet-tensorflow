@@ -12,9 +12,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_string('json_file', '/media/ulsee/E/datasets/coco-annotations/coco-instance-imgid-bbox.json', '')
-tf.flags.DEFINE_string('img_path', '/media/ulsee/E/datasets/cocotrain2017', 'image dataset path need to convert to tfrecord')
-tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/D/tfrecord/ai-instance-bbox--5.tfrecord', 'tfrecord file')
+tf.flags.DEFINE_string('json_file', '/media/ulsee/E/datasets/coco/annotations2017/coco-instance-imgid-bbox.json', '')
+tf.flags.DEFINE_string('img_path', '/media/ulsee/E/datasets/coco/cocotrain2017', 'image dataset path need to convert to tfrecord')
+tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/E/person_subnet_tfrecord/coco-instance-with-ids.tfrecord', 'tfrecord file')
 
 def _int64_feature(value):
     ''' Wrapper for inserting int64 feature into Example proto'''
@@ -125,6 +125,7 @@ def convert_to_tfrecord(json_file, tfrecord_file):
         example = tf.train.Example(features=tf.train.Features(
             feature = {
                 'image':_bytes_feature(img_data),
+                'id':_string_feature(bytes(key, encoding='utf-8')),
                 'height':_int64_feature(shape[0]),
                 'width':_int64_feature(shape[1]),
                 'format':_bytes_feature(img_format),
@@ -136,7 +137,7 @@ def convert_to_tfrecord(json_file, tfrecord_file):
         writer.write(example.SerializeToString())
         count += 1
 
-        # if count == 10:
+        # if count == 5:
         #     break
 
         if count % 1000 == 0:
@@ -222,5 +223,5 @@ def convert_ai_challenger_tfrecord(tfrecord_file, json_file = '/media/ulsee/E/da
 
 if __name__ == '__main__':
 
-    # convert_to_tfrecord(FLAGS.json_file, FLAGS.tfrecord_file)
-    convert_ai_challenger_tfrecord(FLAGS.tfrecord_file)
+    convert_to_tfrecord(FLAGS.json_file, FLAGS.tfrecord_file)
+    # convert_ai_challenger_tfrecord(FLAGS.tfrecord_file)

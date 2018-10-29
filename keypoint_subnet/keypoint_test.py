@@ -20,16 +20,16 @@ from src.model import Keypoint_Subnet
 from src.get_heatmap import get_heatmap
 from src.reader import Keypoint_Reader
 from src.json_read import  load_json, load_coco_json
-from src.img_pre_processing import img_pre_processing
+from src.img_pre_processing import image_vertical_flipping
 
 FLAGS = tf.flags.FLAGS
 
-tf.flags.DEFINE_string('model', '/media/ulsee/D/keypoint_subnet/20181009-1643/model.ckpt-64182/model.ckpt-89999/model_alter.ckpt-399999',
+tf.flags.DEFINE_string('model', '/media/ulsee/D/keypoint_subnet/20181023-2043/model_alter.ckpt-239999',
                        'model path you want to test, e.g., (/media/ulsee/D/multi-pose-net/20180829-1927/model.ckpt-xxxxx)')
-tf.flags.DEFINE_string('img_path', '/media/ulsee/E/datasets/test2',
+tf.flags.DEFINE_string('img_path', '/media/ulsee/E/datasets/coco/cocotrain2017',
                        'image path to test model.')
-tf.flags.DEFINE_string('save_path', '/media/ulsee/E/keypoint/test2', 'path to save image test result')
-tf.flags.DEFINE_boolean('is_training', False, '')
+tf.flags.DEFINE_string('save_path', '/media/ulsee/E/keypoint/coco/train2017', 'path to save image test result')
+tf.flags.DEFINE_boolean('is_training', True, '')
 tf.flags.DEFINE_integer(name='batch_size', default=1, help='train batch size number')
 tf.flags.DEFINE_integer(name='img_size', default=480, help='net input size')
 tf.flags.DEFINE_integer(name='num_keypoints', default=17, help='number of keypoints to detect')
@@ -58,7 +58,7 @@ def deal_with_heatmaps(img, heatmap, factorx, factory, num_keypoints, score_thre
             current_heatmap = heatmap[0, :, :, c]
 
             cur_max = np.max(current_heatmap)
-            print (cur_max)
+            # print (cur_max)
             if cur_max < score_threshold:
                 continue
             index_all = np.where(current_heatmap == cur_max)
@@ -158,31 +158,26 @@ def _test(score_threshold, nms_threshold):
             print('model restore successfully.')
 
             img_num = 0
-
+            test_img_id = ['000000135361','000000265513','000000496607','000000270836']
 
             avg = 0
 
             for img in os.listdir(FLAGS.img_path):
                 # if not is_image(img):
                 #     continue
-
+                # if img.split('.')[0] not in test_img_id:
+                #     continue
                 img_num += 1
                 img_ori = cv2.imread(os.path.join(FLAGS.img_path, img), cv2.IMREAD_COLOR)
 
+                # img_ori = cv2.flip(img_ori, 1)
+
                 img_copy = img_ori.copy()
-                height, width, channels = img_copy.shape
-                if height > width:
-                    img_padding = cv2.copyMakeBorder(img_copy, 0, 0, 0, height-width, cv2.BORDER_CONSTANT, value=(0,0,0))
-                else:
-                    img_padding = cv2.copyMakeBorder(img_copy, 0, width-height, 0, 0, cv2.BORDER_CONSTANT, value=(0,0,0))
 
-
+                # img_input = img_copy
                 img_input = cv2.resize(img_copy, (FLAGS.img_size, FLAGS.img_size), interpolation=cv2.INTER_NEAREST)
                 heatmaps = sess.run(pre_heat,
                                               feed_dict={backbone.input_imgs:[img_input]})
-
-                factorx = img_input.shape[0] / heatmaps.shape[0]
-                facotry = img_input.shape[1] / heatmaps.shape[1]
 
                 factorx = img_ori.shape[0] / heatmaps.shape[1]
                 facotry = img_ori.shape[1] / heatmaps.shape[2]
@@ -194,11 +189,11 @@ def _test(score_threshold, nms_threshold):
                 #     print(sess.run(mean))
                 #     break
 
-                if img_num == 2000:
+                if img_num == 400:
                     break
                 print('tested {}'.format(img_num))
 
             print('avg max === {}'.format(avg/img_num))
 
 if __name__ == '__main__':
-    _test(score_threshold=0.01, nms_threshold=10)
+    _test(score_threshold=0.05, nms_threshold=5)

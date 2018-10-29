@@ -33,11 +33,11 @@ tf.flags.DEFINE_integer('img_size', 480, 'net input size')
 tf.flags.DEFINE_float('learning_rate', 5e-5, 'trian lr')
 tf.flags.DEFINE_float('decay_rate', 0.9, 'lr decay rate')
 tf.flags.DEFINE_integer('decay_steps', 10000, 'lr decay steps')
-tf.flags.DEFINE_string('pretrained_resnet', '/media/ulsee/D/keypoint_subnet/model.ckpt-64999/model.ckpt-129999',
+tf.flags.DEFINE_string('pretrained_resnet', '/media/ulsee/D/keypoint_subnet/20181015-1711/model.ckpt-64999/model.ckpt-339999',
                        'keypoint subnet pretrained model')
 tf.flags.DEFINE_boolean('is_training', True, '')
 tf.flags.DEFINE_string('checkpoint_path', '/media/ulsee/D/retinanet', 'path to save training model')
-tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/E/person_subnet_tfrecord/ai-instance-bbox.tfrecord', '')
+tf.flags.DEFINE_string('tfrecord_file', '/media/ulsee/E/person_subnet_tfrecord/coco-instance-5.tfrecord', '')
 tf.flags.DEFINE_string('finetuning',None,
                     'folder of saved model that you wish to continue training or testing(e.g. 20180828-1803/model.ckpt-xxx), default: None')
 
@@ -63,10 +63,10 @@ def person_detect_train():
     with graph.as_default():
         #-----------------------------tf.placeholder-----------------------------#
         gt_boxs_placeholder = tf.placeholder(tf.float32, shape=[FLAGS.batch_size, 30, 4])
-        gt_labels_placeholder = tf.placeholder(tf.float32, shape=[FLAGS.batch_size, 30,])
+        gt_labels_placeholder = tf.placeholder(tf.int64, shape=[FLAGS.batch_size, 30,])
         #-------------------------------reader-----------------------------------#
         reader = Box_Reader(tfrecord_file=FLAGS.tfrecord_file, img_size=FLAGS.img_size, batch_size=FLAGS.batch_size, epochs=FLAGS.epochs)
-        img_batch, img_height_batch, img_width_batch, gt_boxs, gt_labels = reader.feed()
+        img_batch, img_ids, img_height_batch, img_width_batch, gt_boxs, gt_labels = reader.feed()
         #--------------------------------net-------------------------------------#
         backbone = BackBone(img_size=FLAGS.img_size, batch_size=FLAGS.batch_size, is_training=FLAGS.is_training)
         fpn, _   = backbone.build_fpn_feature()
@@ -111,6 +111,8 @@ def person_detect_train():
                                                   shape=(FLAGS.batch_size, FLAGS.img_size, FLAGS.img_size, 3))
         pred_img_box_placeholder = tf.placeholder(tf.float32,
                                                   shape=(FLAGS.batch_size, FLAGS.img_size, FLAGS.img_size, 3))
+        img_ids_batch_placeholder = tf.placeholder(tf.string, shape=[FLAGS.batch_size,])
+        tf.summary.text('img_ids', img_ids_batch_placeholder)
         tf.summary.image('gt_bbox', gt_img_box_placeholder, max_outputs=2)
         tf.summary.image('Pre_bbox', pred_img_box_placeholder, max_outputs=2)
         tf.summary.scalar('lr', learning_rate)
@@ -145,8 +147,8 @@ def person_detect_train():
 
             start_time = time.time()
             try:
-                while not coord.should_stop() and step < 400000:
-                    imgs, heights, widths, boxes, labels = sess.run([img_batch, img_height_batch, img_width_batch, gt_boxs, gt_labels])
+                while not coord.should_stop():
+                    imgs, ids, heights, widths, boxes, labels = sess.run([img_batch, img_ids, img_height_batch, img_width_batch, gt_boxs, gt_labels])
 
                     gt_img_box, pre_img_box, \
                     total_loss, box_pred_list, classes_pred, \
@@ -157,7 +159,8 @@ def person_detect_train():
                          ], feed_dict={
                             backbone.input_imgs: imgs,
                             gt_boxs_placeholder: boxes,
-                            gt_labels_placeholder:labels
+                            gt_labels_placeholder:labels,
+                            img_ids_batch_placeholder:ids
                         }
                     )
                     # cur_time = time.time()
@@ -166,8 +169,12 @@ def person_detect_train():
 
                     #-------------------summary------------------------#
                     # gt_img_box_placeholder: gt_img_box,
-                    merge_op = sess.run(summary_op,feed_dict={pred_img_box_placeholder:pre_img_box,
-                                                              gt_img_box_placeholder: gt_img_box})
+                    merge_op = sess.run(summary_op,feed_dict={backbone.input_imgs: imgs,
+                                                              gt_boxs_placeholder: boxes,
+                                                              gt_labels_placeholder:labels,
+                                                              pred_img_box_placeholder:pre_img_box,
+                                                              gt_img_box_placeholder: gt_img_box,
+                                                              img_ids_batch_placeholder: ids})
                     summary_writer.add_summary(merge_op, step)
                     summary_writer.flush()
 

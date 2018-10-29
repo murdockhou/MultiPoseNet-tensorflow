@@ -13,7 +13,7 @@ import os, json
 import sys
 sys.path.append('../')
 
-from src.model import Keypoint_Subnet
+
 
 class Keypoint_Reader:
     def __init__(self, tfrecord_file, img_size=56, batch_size=4, epochs = 1, capacity = 1000, num_threads=12, name=''):

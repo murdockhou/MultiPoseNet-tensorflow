@@ -8,7 +8,7 @@
 '''
 
 import tensorflow as tf
-from src.retinanet import RetinaNet
+# from src.retinanet import RetinaNet
 
 class Box_Reader(object):
     def __init__(self, tfrecord_file, img_size=224, batch_size=1, epochs=1):
@@ -27,6 +27,7 @@ class Box_Reader(object):
             serialized_example,
             features={
                 'image': tf.FixedLenFeature((), tf.string),
+                'id': tf.FixedLenFeature([], tf.string),
                 'format': tf.FixedLenFeature((), tf.string, 'jpeg'),
                 'height': tf.FixedLenFeature([], tf.int64),
                 'width': tf.FixedLenFeature([], tf.int64),
@@ -37,6 +38,7 @@ class Box_Reader(object):
         )
         channel = tf.cast(features['channel'], tf.int64)
         img = tf.image.decode_jpeg(features['image'], channels=3)  # tensor, [height, width, channels]
+        img_id = features['id']
         # img = tf.decode_raw(features['image'], tf.uint8)
         img = tf.image.convert_image_dtype(img, dtype=tf.float32)
         img_height = tf.cast(features['height'], tf.int32)
@@ -56,15 +58,15 @@ class Box_Reader(object):
         if True:
             img, boxs = self._pre_processing(img, img_height, img_width, boxs)
 
-        imgs, heights, widths, boxes, labels = tf.train.batch(
-            [img, img_height, img_width, boxs, label],
+        imgs, img_ids, heights, widths, boxes, labels = tf.train.shuffle_batch(
+            [img, img_id, img_height, img_width, boxs, label],
             batch_size=self.batch_size,
             num_threads=12,
             capacity=1000,
-            dynamic_pad=True
+            min_after_dequeue=400
         )
 
-        return imgs, heights, widths, boxes, labels
+        return imgs, img_ids, heights, widths, boxes, labels
 
     def _pre_processing(self, img, height, width, bbox):
         img = tf.expand_dims(img, axis=0)
@@ -84,8 +86,8 @@ class Box_Reader(object):
 def reader_test():
     batch = 1
     epochs = 1
-    reader = Box_Reader(tfrecord_file='', batch_size=batch, epochs=epochs)
-    imgs, hs, ws, boxs, labels = reader.feed()
+    reader = Box_Reader(tfrecord_file='/media/ulsee/E/person_subnet_tfrecord/coco-instance-5.tfrecord', batch_size=batch, epochs=epochs)
+    imgs, ids, hs, ws, boxs, labels = reader.feed()
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     with tf.Session() as sess:
         sess.run(init_op)
@@ -95,7 +97,8 @@ def reader_test():
 
         try :
             while not coord.should_stop():
-                a, b, c, d, e = sess.run([imgs, hs, ws, labels])
+                a, b, c, d, e, f = sess.run([imgs, ids, hs, ws, labels, boxs])
+                print (b)
                 step +=1
         except tf.errors.OutOfRangeError:
             print ('batch = {}, epochs = {}, steps = {}'.format(batch, epochs, step))

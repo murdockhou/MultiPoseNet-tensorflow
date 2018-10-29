@@ -3,3 +3,5 @@
 *.py[cod]
 pre_trained/
 *.ckpt
+yolo_v3/
+
